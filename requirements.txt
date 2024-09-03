@@ -1,0 +1,9 @@
+pandas
+xlrd
+python-dotenv
+pydantic 
+
+mysql-connector-python
+
+streamlit
+watchdog
