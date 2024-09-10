@@ -29,7 +29,6 @@ def insert_merged_data_in_bulk(df, table_name='employees_roles'):
             df['startdate'] = pd.to_datetime(df['startdate'], errors='coerce')
             df['enddate'] = pd.to_datetime(df['enddate'], errors='coerce')
 
-            n
             insert_query = f"""
             INSERT INTO {table_name} (name, startdate, phonenumber, email, enddate, role, description)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
