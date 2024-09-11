@@ -18,11 +18,6 @@ def insert_merged_data_in_bulk(df, table_name='employees_roles'):
         if connection.is_connected():
             st.write("Connected to the database successfully.")
             cursor = connection.cursor()
-
-            
-            create_table_if_not_exists(connection)
-
-            s
             df.rename(columns={"phone number": "phonenumber"}, inplace=True)
 
             
@@ -34,10 +29,10 @@ def insert_merged_data_in_bulk(df, table_name='employees_roles'):
             VALUES (%s, %s, %s, %s, %s, %s, %s)
             """
 
-            merge_data = df[['name', 'startdate', 'phonenumber', 'email', 'enddate', 'role', 'description']].to_records(index=False).tolist()
+            Concat_data = df[['name', 'startdate', 'phonenumber', 'email', 'enddate', 'role', 'description']].values.tolist()
 
             
-            cursor.executemany(insert_query, merged_data)
+            cursor.executemany(insert_query, Concat_data_data)
             connection.commit()
 
             st.write(f"{cursor.rowcount} rows inserted successfully.")
@@ -71,10 +66,14 @@ if uploaded_file2 is not None:
 
 if st.button("Join DataFrames and Insert into Database"):
     if df1 is not None and df2 is not None:
-        df = pd.concat([df1, df2], axis=1)  
-        _display_dataframe(df)  
-        
-        
+
+        df = pd.concat([df1, df2], axis=1)
+
+
+        st.write("Combined DataFrame:")
+        st.write(df)
+
+
         insert_merged_data_in_bulk(df)
     else:
-        st.write("Please upload both Excel files before merging.")
+        st.write("Please upload both Excel files before merging.") 
