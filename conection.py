@@ -1,10 +1,10 @@
 import mysql.connector
 import os
 import streamlit as st
+import pandas as pd
 
-def insert_merged_data_in_bulk(df, table_name='employees_roles'):
+def connect_to_db():
     connection = None
-    cursor = None
 
     try:
         
@@ -17,63 +17,48 @@ def insert_merged_data_in_bulk(df, table_name='employees_roles'):
 
         if connection.is_connected():
             st.write("Connected to the database successfully.")
-            cursor = connection.cursor()
-            df.rename(columns={"phone number": "phonenumber"}, inplace=True)
-
+            return connection
             
-            df['startdate'] = pd.to_datetime(df['startdate'], errors='coerce')
-            df['enddate'] = pd.to_datetime(df['enddate'], errors='coerce')
-
-            insert_query = f"""
-            INSERT INTO {table_name} (name, startdate, phonenumber, email, enddate, role, description)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-            """
-
-            Concat_data = df[['name', 'startdate', 'phonenumber', 'email', 'enddate', 'role', 'description']].values.tolist()
-
-            
-            cursor.executemany(insert_query, Concat_data_data)
-            connection.commit()
-
-            st.write(f"{cursor.rowcount} rows inserted successfully.")
 
     except mysql.connector.Error as e:
         st.write(f"Error: {e}")
-        if connection:
+        if connection is not None:
             connection.rollback()
 
+
+
+def insert_merged_data_in_bulk(df, table_name='employees_roles'):
+    connection = connect_to_db()
+    
+    if connection is None:
+        st.write('Failed to connect to Database')
+        return
+
+    cursor = connection.cursor()
+
+    try:
+        df.rename(columns={"phone number": "phonenumber"}, inplace=True)
+        
+        df['startdate'] = pd.to_datetime(df['startdate'], errors='coerce').dt.strftime('%Y-%m-%d')
+        df['enddate'] = pd.to_datetime(df['enddate'], errors='coerce').dt.strftime('%Y-%m-%d')
+
+        insert_query = f"""
+        INSERT INTO {table_name} (name, startdate, phonenumber, email, enddate, role, description)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """
+
+        data_concat = df[['name', 'startdate', 'phonenumber', 'email', 'enddate', 'role', 'description']].values.tolist()
+
+        cursor.executemany(insert_query, data_concat)
+        connection.commit()
+
+        st.write(f"{cursor.rowcount} rows inserted successfully.")
+
+    except mysql.connector.Error as e:
+        st.write(f"Error inserting data: {e}")
+        connection.rollback()
+
     finally:
-        if cursor:
-            cursor.close()
-        if connection and connection.is_connected():
-            connection.close()
+        cursor.close()
+        connection.close()
 
-
-st.title("Upload the list of employees and roles")
-
-
-uploaded_file1 = st.file_uploader("Employee", type=["xls", "xlsx"], key="file_uploader_1")
-df1 = None
-if uploaded_file1 is not None:
-    df1 = _extract_data_from_excel1(uploaded_file1)
-
-
-uploaded_file2 = st.file_uploader("Role", type=["xls", "xlsx"], key="file_uploader_2")
-df2 = None
-if uploaded_file2 is not None:
-    df2 = _extract_data_from_excel2(uploaded_file2)
-
-
-if st.button("Join DataFrames and Insert into Database"):
-    if df1 is not None and df2 is not None:
-
-        df = pd.concat([df1, df2], axis=1)
-
-
-        st.write("Combined DataFrame:")
-        st.write(df)
-
-
-        insert_merged_data_in_bulk(df)
-    else:
-        st.write("Please upload both Excel files before merging.") 
